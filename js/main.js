@@ -1,97 +1,99 @@
-var taskList = new TaskList();
-var validation = new Validation();
+var taskList = new TaskList; 
+var validator = new Validation;
+
+var getEleID = function(id)
+{
+    return document.getElementById(id);
+}
+
+var resetInput = function(id)
+{
+    getEleID('newTask').value = "";
+}
+
+var getLocalStorage = function()
+{
+    if (localStorage.getItem('TaskList'))
+    {
+        taskList.arr = JSON.parse(localStorage.getItem('TaskList'));
+        renderTaskList(taskList.arr);
+    }
+}
+
+var setLocalStorage = function()
+{
+    localStorage.setItem('TaskList', JSON.stringify(taskList.arr));
+}
 
 getLocalStorage();
-/**
- * Add Task
- */
-getEle("addItem").addEventListener("click", function () {
-  var newTask = getEle("newTask").value;
 
-  var isValid = true;
-  isValid &= validation.checkEmty(
-    newTask,
-    "notiInput",
-    "(*) Vui lòng nhập thông tin"
-  );
+function renderTaskList(taskList) 
+{
+    var content = ["", ""];
 
-  if (!isValid) return;
+    taskList.forEach(function(task){        
+        content[1 - Number(task.status === "todo")] += `
+                <li>
+                    <span>${task.name}</span>
+                    <div class="buttons">
+                        <button class="remove" onclick="removeTask('${task.name}')"><i class="fa fa-trash-alt"></i></button>
+                        <button class="complete" onclick="changeStatus('${task.name}')">
+                            <i class="far fa-check-circle"></i>
+                            <i class="fas fa-check-circle"></i>
+                        </button>
+                    </div>
+                </li>
+            `
+    });
 
-  var id = Math.random();
-  var task = new Task(id, newTask, "todo");
-  taskList.addTask(task);
-  createTable(taskList.arr);
-  setLocalStorage();
+    getEleID('todo').innerHTML = content[0]; 
+    getEleID('completed').innerHTML = content[1];
+}
+
+getEleID('addItem').addEventListener('click', function()
+{
+    var taskName = getEleID('newTask').value; 
+    var taskStatus = "todo"; 
+
+    var flag = true; 
+    flag &= validator.checkEmpty(taskName);
+    flag &= validator.checkDuplicate(taskList, taskName); 
+
+    if (flag == false) 
+    {
+        resetInput();
+        return; 
+    }
+
+    alert("Task added!");
+
+    var task = new Task(taskName, taskStatus);
+    taskList.addTask(task);
+    
+    renderTaskList(taskList.arr);
+    resetInput();
+    
+    setLocalStorage();
 });
 
-/**
- * Delete Task
- */
-function deleteTask(id) {
-  taskList.deleteTask(id);
-  createTable(taskList.arr);
-  setLocalStorage();
+var removeTask = function(name)
+{
+    taskList.deleteTask(name);
+    renderTaskList(taskList.arr);
+
+    setLocalStorage();
 }
 
-/**
- * Change Status
- */
-function changeStatus(id) {
-  var task = taskList.getTaskById(id);
-  task.status = task.status === "todo" ? "completed" : "todo";
-  taskList.updateTask(task);
-  createTable(taskList.arr);
-  setLocalStorage();
-}
+var changeStatus = function(name)
+{
+    var idx = taskList.findIdxByName(name); 
 
-function createTable(arr) {
-  var contentTodo = "";
-  var contentCompleted = "";
-  getEle("todo").innerHTML = "";
-  getEle("completed").innerHTML = "";
-  arr.forEach(function (item, index) {
-    if (item.status === "todo") {
-      contentTodo += renderListLiHtml(item);
-      getEle("todo").innerHTML = contentTodo;
-    } else if (item.status === "completed") {
-      contentCompleted += renderListLiHtml(item);
-      getEle("completed").innerHTML = contentCompleted;
+    if (idx !== -1)
+    {
+        alert('Task status changed!');
+        taskList.arr[idx].changeStatus();
+        renderTaskList(taskList.arr);       
+
+        setLocalStorage();
     }
-  });
-}
-
-function renderListLiHtml(item) {
-  return `<li>
-      <span>${item.taskName}</span>
-      <div class="buttons">
-        <button
-          class="remove"
-          onclick="deleteTask(${item.id})"
-        >
-          <i class="fa fa-trash-alt"></i>
-        </button>
-        <button
-          class="complete"
-          onclick="changeStatus(${item.id})"
-        >
-          <i class="far fa-check-circle"></i>
-          <i class="fas fa-check-circle"></i>
-        </button>
-      </div>
-    </li>`;
-}
-
-function setLocalStorage() {
-  localStorage.setItem("TaskList", JSON.stringify(taskList.arr));
-}
-
-function getLocalStorage() {
-  if (localStorage.getItem("TaskList")) {
-    taskList.arr = JSON.parse(localStorage.getItem("TaskList"));
-    createTable(taskList.arr);
-  }
-}
-
-function getEle(id) {
-  return document.getElementById(id);
 }
