@@ -15,7 +15,13 @@ var getLocalStorage = function()
 {
     if (localStorage.getItem('TaskList'))
     {
-        taskList.arr = JSON.parse(localStorage.getItem('TaskList'));
+        var arr = JSON.parse(localStorage.getItem('TaskList'));
+        
+        arr.forEach(function(item){
+            var task = new Task(item.name, item.status);
+            taskList.addTask(task);
+        });
+
         renderTaskList(taskList.arr);
     }
 }
@@ -37,7 +43,7 @@ function renderTaskList(taskList)
                     <span>${task.name}</span>
                     <div class="buttons">
                         <button class="remove" onclick="removeTask('${task.name}')"><i class="fa fa-trash-alt"></i></button>
-                        <button class="complete" onclick="changeStatus('${task.name}')">
+                        <button class="complete" onclick="changeTaskStatus('${task.name}')">
                             <i class="far fa-check-circle"></i>
                             <i class="fas fa-check-circle"></i>
                         </button>
@@ -84,13 +90,14 @@ var removeTask = function(name)
     setLocalStorage();
 }
 
-var changeStatus = function(name)
+var changeTaskStatus = function(name)
 {
     var idx = taskList.findIdxByName(name); 
 
     if (idx !== -1)
     {
         alert('Task status changed!');
+        
         taskList.arr[idx].changeStatus();
         renderTaskList(taskList.arr);       
 
